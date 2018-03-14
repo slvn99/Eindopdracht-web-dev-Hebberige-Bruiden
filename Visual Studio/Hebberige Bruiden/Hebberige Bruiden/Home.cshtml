@@ -1,0 +1,144 @@
+﻿@using WebMatrix.Data;
+@{
+    //Het openen van de dataconnectie
+    string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Database.mdf;Integrated Security=True";
+    string provider = "System.Data.SqlClient";
+    Database db = Database.OpenConnectionString(connectionString, provider);
+
+    //OPHALEN DATA
+    //geen data selecteren
+    var selectCommand = "SELECT * FROM Wishlist WHERE Account = 9999";
+
+    //aanmaken van variablen
+    var searchTerm = "";
+    var searchterm2 = "";
+    var message = "";
+    var message2 = "";
+    var message3 = "";
+
+    //als de velden zijn ingevuld, variabelen aanmaken voor ophalen van de gevraagde data
+    if (!Request.QueryString["Code"].IsEmpty() && !Request.QueryString["E-mail"].IsEmpty())
+    {
+        selectCommand = "SELECT * FROM Wishlist WHERE Account = @0 AND (Email = @1 OR Email IS NULL) ORDER BY Prio ASC";
+        searchTerm = Request.QueryString["Code"];
+        searchterm2 = Request.QueryString["E-mail"];
+    }
+
+    //als iets leeg is, bijbehorend veld noemen dat deze ingevuld moet worden
+    if (Request.QueryString["Code"].IsEmpty())
+    {
+        message = "Vul uw unieke Code in";
+    }
+    if (Request.QueryString["E-mail"].IsEmpty())
+    {
+        message2 = "Vul uw E-mail in";
+    }
+
+    //data ophalen met aangemaakte variabelen
+    var selectedData = db.Query(selectCommand, searchTerm, searchterm2);
+    var grid = new WebGrid(source: selectedData);
+
+    //TOEVOEGEN DATABASE
+    //variabelen aanmaken voor toevoegen van items in database
+    int code = 0;
+    var email = "";
+    int item = 0;
+
+    //IF gepost, dan data in variabelen gooien
+    if (IsPost)
+    {
+        code = Convert.ToInt32(Request.Form["Code"]);
+        email = Request.Form["E-mail"];
+        item = Convert.ToInt32(Request.Form["Item"]);
+
+        //aanmaken variabele voor data inserten
+        var insertCommand = "UPDATE Wishlist SET Email = @0 WHERE Account = @1 AND Id = @2";
+
+        //data daadwerkelijk invoeren met gemaakte variablelen, en daarna opnieuw pagina laden
+        db.Execute(insertCommand, email, code, item);
+        message3 = "Je E-mail is gekoppeld aan het item! Dit item is voor andere gebruikers niet meer zichtbaar";
+        
+    }
+
+}
+
+<!DOCTYPE html>
+<HTML lang="en">
+
+<HEAD>
+    <META charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <TITLE>Hebberige Bruiden - Home</TITLE>
+    <LINK rel="stylesheet" href="CSS/Home.css">
+    <link rel="stylesheet" media="screen" href="http://vjs.zencdn.net/5.4.6/video-js.min.css">
+    <link rel="stylesheet" media="screen" href="CSS/vsg-skin.css">
+
+</HEAD>
+<body>
+    <NAV>
+        <UL>
+            <ARTICLE id="logo">
+                <H2>Logo Here!</H2>
+            </ARTICLE>
+            <LI ID="homeknop"><A class="active" href="home.cshtml">Home</A></LI>
+            <LI ID="helpknop"><A href="help.cshtml">Help</A></LI>
+            <LI ID="loginknop"><A href="login.cshtml">Bruidskoppel</A></LI>
+        </UL>
+    </NAV>
+
+    <DIV id="wrapper">
+        <!--<SECTION id="skin">
+            <!-- voor videoplayer -->
+        <!--</SECTION> -->
+        <DIV id="updating_news">
+            <SECTION id="main_section">
+                <ARTICLE>
+                    <div>
+                        <H1>Welkom bij "Hebberige Bruiden"</H1>
+                        <H2>De website waarmee je dubbele cadeau's voorkomt!</H2>
+                        <P id="beschrijvingtext">Om de wenslijst van het gelukkige stel te bekijken kan je hieronder je unieke code invoeren!</P>
+                    </div>
+                    <FOOTER>
+                        <h2>@message</h2>
+                        <h2>@message2</h2>
+                        <form method="get">
+                            <p>Code</p> <input type="text" name="Code" value=""><br />
+                            <p>E-mail</p> <input type="text" name="E-mail" value=""><br />
+                            <input type="submit" value="Haal je wenslijst op!">
+                            <h2>Wenslijst @searchTerm</h2>
+                            @grid.GetHtml(
+                                   tableStyle: "grid",
+                                   headerStyle: "head",
+                                   alternatingRowStyle: "alt",
+                                   columns: grid.Columns(
+                                     grid.Column("Id"),
+                                     grid.Column("Item"),
+                                     grid.Column("Prio"),
+                                     grid.Column("Email")
+                                 )
+                                 )
+
+                        </form>
+
+                        <form method="post">
+                            <p>Code ter bevestiging</p> <input type="text" name="Code" value="@Request.Form["Code"]"><br />
+                            <p>E-mail ter bevestiging</p> <input type="text" name="E-mail" value="@Request.Form["E-mail"]"><br />
+                            <p>Het "Item" nummer</p> <input type="number" name="Item" value="@Request.Form["Item"]"><br />
+                            <input type="submit" value="Bevestig!">
+                            <p>@message3</p>
+                        </form>
+                    </FOOTER>
+                </ARTICLE>
+            </SECTION>
+        </DIV>
+
+
+    </DIV>
+
+    <!-- VIDEOJS JS -->
+    <script src="http://vjs.zencdn.net/5.4.6/video.min.js"></script>
+    <script src="https://cdn.rawgit.com/videojs/videojs-youtube/master/src/Youtube.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+</body>
+</HTML>

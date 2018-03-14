@@ -1,0 +1,90 @@
+﻿@using WebMatrix.Data;
+@{
+    //Het openen van de dataconnectie
+    string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Database.mdf;Integrated Security=True";
+    string provider = "System.Data.SqlClient";
+    Database db = Database.OpenConnectionString(connectionString, provider);
+
+    //TOEVOEGEN DATABASE
+    //variabelen aanmaken voor toevoegen van items in database
+    var voornamen = "";
+    var email = "";
+    var wachtwoord = "";
+    var message = "";
+    //IF gepost, dan data in variabelen gooien
+    if (IsPost)
+    {
+        voornamen = Request.Form["Namen"];
+        email = Request.Form["E-mail"];
+        wachtwoord = Request.Form["Wachtwoord"];
+
+        //aanmaken variabele voor data inserten
+        var insertCommand = "INSERT INTO Accounts (Voornamen, Email, Wachtwoord) VALUES (@0,@1,@2)";
+
+        //data daadwerkelijk invoeren met gemaakte variablelen, en daarna opnieuw pagina laden
+        db.Execute(insertCommand, voornamen,email, wachtwoord);
+        message = "Je account is geregistreerd, ga terug naar Bruidskoppel en log in om te beginnen!";
+
+    }
+}
+
+<!DOCTYPE html>
+<HTML lang="en">
+
+<HEAD>
+    <META charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <TITLE>Hebberige Bruiden - Register</TITLE>
+    <LINK rel="stylesheet" href="CSS/Register.css">
+
+
+</HEAD>
+<body>
+    <NAV>
+        <UL>
+            <ARTICLE id="logo">
+                <H2>Logo Here!</H2>
+            </ARTICLE>
+            <LI ID="homeknop"><A href="home.cshtml">Home</A></LI>
+            <LI ID="helpknop"><A href="help.cshtml">Help</A></LI>
+            <LI ID="loginknop"><A class="active" href="login.cshtml">Bruidskoppel</A></LI>
+        </UL>
+    </NAV>
+
+    <DIV id="wrapper">
+        <!--<SECTION id="skin">
+            <!-- voor videoplayer -->
+        <!--</SECTION> -->
+        <DIV id="updating_news">
+            <SECTION id="main_section">
+                <ARTICLE>
+                    <div>
+                        <H1>Registreer</H1>
+                        <H2>Vul hieronder je gegevens in.</H2>
+                        <P id="beschrijvingtext"></P>
+                    </div>
+                    <FOOTER>
+                        <form method="post">
+                            <p>Voornamen</p> <input type="text" name="Namen" value="@Request.Form["Namen"]"><br>
+                            <p>E-mail</p> <input type="text" name="E-mail" value="@Request.Form["E-mail"]"><br>
+                            <p>Wachtwoord</p> <input type="text" name="Wachtwoord" value="@Request.Form["Wachtwoord"]"><br>
+                            <input type="submit" value="Registreer!">
+                            <h2>@message</h2>
+                        </form>
+                    </FOOTER>
+                </ARTICLE>
+            </SECTION>
+        </DIV>
+
+        <FOOTER id="the_footer">
+            Sam van Noord 2018
+        </FOOTER>
+    </DIV>
+
+    <!-- VIDEOJS JS -->
+    <script src="http://vjs.zencdn.net/5.4.6/video.min.js"></script>
+    <script src="https://cdn.rawgit.com/videojs/videojs-youtube/master/src/Youtube.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+</body>
+</HTML>
