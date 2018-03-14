@@ -126,7 +126,7 @@ nav > ul > li > a:hover:not(.active){background-color:yellow;}
 }
 #main_section{
     width: 80%;
-    height: 90%;
+    height: 100%;
     margin: auto;
     padding: 0px;
 }
@@ -165,6 +165,12 @@ nav > ul > li > a:hover:not(.active){background-color:yellow;}
 }
 form{
     padding: 10px;
+}
+#additem{
+    padding: 10px;
+}
+#message{
+    color: red;
 }
 .grid {
     margin: 4px;

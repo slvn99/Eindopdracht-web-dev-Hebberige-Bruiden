@@ -8,11 +8,46 @@
     //OPHALEN DATA
 
     //aanmaken van variablen
-    var selectCommand = "SELECT * FROM Wishlist WHERE Account = 9999";
+    var selectCommand = "SELECT Id, Item, Prio FROM Wishlist WHERE Account = 9999";
     var searchTerm = "";
     var searchterm2 = "";
     var message = "";
+    bool form = true;
+    int id = 0;
     var selectedData = db.Query(selectCommand,searchTerm);
+
+    //Checken of er data gepost is, en dus toegevoegd of verwijderd moet worden
+    if (IsPost)
+    {
+
+        selectCommand = "SELECT Id FROM Wishlist WHERE Id = @0";
+        searchTerm = Request.Form["Id"];
+        var result = db.Query(selectCommand, searchTerm);
+        if (searchTerm != null)
+        {
+            var deleteCommand = "DELETE FROM Wishlist WHERE Id = @0";
+            db.Execute(deleteCommand, searchTerm);
+            message = "je item is verwijderd!";
+        }
+
+        var addTerm = Request.Form["Item"];
+        var addTerm2 = Request.Form["Prio"];
+
+        if (addTerm != null && addTerm2 != null)
+        {
+            //aanmaken variabel voor data inserten, en Id behorend aan account retrieven
+            var insertCommand = "INSERT INTO Wishlist (Item, Prio, Account) VALUES (@0,@1,@2)";
+            selectCommand = "SELECT Id FROM Accounts WHERE Email =@0 AND Wachtwoord = @1";
+            searchTerm = Request.QueryString["E-mail"];
+            searchterm2 = Request.QueryString["Wachtwoord"];
+            id = db.QueryValue(selectCommand, searchTerm, searchterm2);
+            //data daadwerkelijk invoeren met gemaakte variablelen, en daarna opnieuw pagina laden
+            db.Execute(insertCommand, addTerm, addTerm2, id);
+            message = "Je item is toegevoegd!";
+        }
+
+    }
+
     //als de velden zijn ingevuld, variabelen aanmaken voor ophalen van de gevraagde data
     if (!Request.QueryString["E-mail"].IsEmpty() && !Request.QueryString["Wachtwoord"].IsEmpty())
     {
@@ -23,18 +58,26 @@
         //data ophalen met aangemaakte variabelen
         var result = db.Query(selectCommand, searchTerm, searchterm2);
 
+        //wanneer er een resultaat is, en dus een account met die email en wachtwoord combinatie, haal de bijbehorende wishlist op
         if (result != null)
         {
+
             selectCommand = "SELECT Id FROM Accounts WHERE Email =@0 AND Wachtwoord = @1";
-            //var searchTerm3 = db.Query(selectCommand, searchTerm, searchterm2);
-            int id = db.QueryValue(selectCommand,searchTerm, searchterm2);
-            selectCommand = "SELECT * FROM Wishlist WHERE Account = @0 ORDER BY Prio ASC";
+            id = db.QueryValue(selectCommand,searchTerm, searchterm2);
+            selectCommand = "SELECT Id, Item, Prio FROM Wishlist WHERE Account = @0 ORDER BY Prio ASC";
             selectedData = db.Query(selectCommand,id);
-            // als je dit niet werkend krijgt, gooi gewoon een workaround erin dat iemand dat Id zelf moet Toekennen, en daarmee dus ook meerdere lijstjes zou kunnen maken
-
         }
-
     }
+    else
+    {
+        form = false;
+    }
+
+
+
+
+
+    //declare een nieuwe webgrid om data te displayen
     var grid = new WebGrid(source: selectedData);
 
 
@@ -71,29 +114,55 @@
         <DIV id="updating_news">
             <SECTION id="main_section">
                 <ARTICLE>
+                    @if (form == false)
+                    {
                     <div>
                         <H1>Login</H1>
                         <H2>Vul hieronder je inloggegevens in.</H2>
                         <P id="beschrijvingtext">Heb je nog geen account? Druk dan op Registreren</P>
                     </div>
+                    }
                     <FOOTER>
-                        <form method="get">
-                            <p>E-mail</p> <input type="text" name="E-mail" value="jan123@email.nl"><br>
-                            <p>Wachtwoord</p> <input type="text" name="Wachtwoord" value="******"><br>
-                            <input type="submit" value="Log in!">
-                            <input type="button" value="Registreer een nieuw account!" onclick="window.location = 'Register.cshtml';" />
-                        </form>
-                        @grid.GetHtml(
-                    tableStyle: "grid",
-                    headerStyle: "head",
-                    alternatingRowStyle: "alt",
-                    columns: grid.Columns(
-                      grid.Column("Id"),
-                      grid.Column("Item"),
-                      grid.Column("Prio"),
-                      grid.Column("Email")
-                  )
-                  )
+                        @if (form == false)
+                         {
+                          <form method="get">
+                               <p>E-mail</p> <input type="text" name="E-mail" value=""><br>
+                               <p>Wachtwoord</p> <input type="text" name="Wachtwoord" value=""><br>
+                               <input type="submit" value="Log in!">
+                               <input type="button" value="Registreer een nieuw account!" onclick="window.location = 'Register.cshtml';" />
+                         </form>
+                        }
+                         @grid.GetHtml(
+                            tableStyle: "grid",
+                            headerStyle: "head",
+                            alternatingRowStyle: "alt",
+                            columns: grid.Columns(
+                               grid.Column("Id"),
+                               grid.Column("Item"),
+                               grid.Column("Prio")
+                                )
+                               )
+
+                        @if (form == true)
+                          {
+                    <h2 id="message">@message</h2>
+                    <div id="additem">
+                        <h2>Voeg items toe!</h2>
+                    </div>
+                    <form method="post">
+                        <p>Item</p> <input type="text" name="Item" value=""><br>
+                        <p>Prioriteit</p> <input type="number" name="Prio" value=""><br>
+                        <input type="submit" value="Voeg toe">
+                    </form>
+
+                    <div id="additem">
+                        <h2>Verwijder een item</h2>
+                    </div>
+                    <form method="post">
+                        <p>Id</p> <input type="number" name="Id" value=""><br>
+                        <input type="submit" value="Verwijder">
+                    </form>
+}
                     </FOOTER>
                 </ARTICLE>
             </SECTION>
